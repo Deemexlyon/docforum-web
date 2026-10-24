@@ -25,27 +25,23 @@ export type AuthStatus = 'idle' | 'resolving' | 'resolved';
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  csrfToken: string | null;
-  status: AuthStatus;
-  setSession: (user: User, accessToken: string, csrfToken?: string) => void;
+  /** Why the last sign-out happened, while signed out. Set by the idle
+   * timeout (issue #82) so the login page can explain it even when a
+   * route guard's redirect wins the navigation race and drops the
+   * `?reason=` query param. Cleared by `setSession`. In-memory only. */
+  signOutReason: 'idle-timeout' | null;
+  setSession: (user: User, accessToken: string) => void;
   clearSession: () => void;
-  beginAuthCheck: () => void;
-  endAuthCheck: () => void;
+  signOutDueToIdle: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
-  csrfToken: null,
-  status: 'idle',
-  setSession: (user, accessToken, csrfToken) => {
-    if (csrfToken) writeCsrfToken(csrfToken);
-    set({ user, accessToken, csrfToken: csrfToken ?? null, status: 'resolved' });
-  },
-  clearSession: () => {
-    clearCsrfToken();
-    set({ user: null, accessToken: null, csrfToken: null, status: 'resolved' });
-  },
-  beginAuthCheck: () => set({ status: 'resolving' }),
-  endAuthCheck: () => set({ status: 'resolved' }),
+  signOutReason: null,
+  setSession: (user, accessToken) =>
+    set({ user, accessToken, signOutReason: null }),
+  clearSession: () => set({ user: null, accessToken: null }),
+  signOutDueToIdle: () =>
+    set({ user: null, accessToken: null, signOutReason: 'idle-timeout' }),
 }));

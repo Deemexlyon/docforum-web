@@ -2,17 +2,20 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { init } from '@sentry/react';
 import { phiScrubber, phiBeforeBreadcrumb } from './utils/phi-scrubber';
-// HashRouter, not BrowserRouter: GitHub Pages has no server-side rewrite
-// for client-side routes, so a deep link like /login would 404 on refresh
-// under history-API routing. Hash-based routing needs no server config.
-// Revisit if this ever deploys somewhere with a real rewrite rule.
-import { HashRouter } from 'react-router-dom';
+// Router selection: BrowserRouter by default; HashRouter only when
+// VITE_USE_HASH_ROUTER=true (set by the GitHub Pages build — see
+// docs/adr/0001-routing-strategy.md and deploy-pages.yml).
+import { BrowserRouter, HashRouter } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './query-client';
+import { TimeZoneProvider } from './i18n/TimeZoneProvider';
 import { useAuthStore } from './store/auth-store';
 import { bootstrapSession } from './services/session';
 import App from './App';
 import './styles/global.css';
+
+const useHashRouter = import.meta.env.VITE_USE_HASH_ROUTER === 'true';
+const Router = useHashRouter ? HashRouter : BrowserRouter;
 
 // Mock API for local development (issue #95) — only runs under
 // `npm run dev:mock` (a DEV build with VITE_ENABLE_MOCKS=true). In
@@ -71,9 +74,11 @@ if (!rootElement) throw new Error('#root element not found');
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <HashRouter>
-        <App />
-      </HashRouter>
+      <Router>
+        <TimeZoneProvider>
+          <App />
+        </TimeZoneProvider>
+      </Router>
     </QueryClientProvider>
   </StrictMode>,
 );
