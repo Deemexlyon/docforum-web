@@ -62,5 +62,13 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.node },
     },
+    rules: {
+      // Playwright's fixture API passes a callback named `use` (as in
+      // `({ page }, use) => ...`), which the React hook rules misread as
+      // React's `use()`. These specs contain no React components at all,
+      // so the rule has nothing to check here.
+      'react-hooks/rules-of-hooks': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
   },
 );
