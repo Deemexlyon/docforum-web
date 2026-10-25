@@ -1,39 +1,37 @@
-# End-to-end smoke test (issue #12)
+# Browser test suites
 
-One Playwright test that drives the real app against a **real
-`docforum-core` backend and a throwaway Postgres** — no MSW, no service
-stubs. It covers: sign up → open a protected page → reload stays signed in
-(#9) → log out → reload stays logged out → log back in.
+`npm run test:e2e` starts one Vite mock server and runs Playwright against the
+existing browser MSW handlers in `src/mocks/`. Fixtures are visibly fake and
+use `example.test` addresses. CI uses
+`mcr.microsoft.com/playwright:v1.64.1-noble` to keep Chromium and font
+rendering stable.
 
-## Pinned core ref
+- `journeys.spec.ts` checks interactions, role guards, a one-time MSW network
+  failure with React Query retry, cold-start latency, and exact payment
+  mutation counts. It exercises the implemented care thread and facility finder;
+  doctor search, booking, intake, appointment list and doctor order issuance
+  still have no corresponding screens in this repo. Those steps must be added
+  to the test when the W2/W3 product screens land. The 409 booking case cannot
+  be tested in the browser until the booking UI exists.
+- `accessibility.spec.ts` scans every concrete route in `routes.ts` in light
+  and reduced motion modes. New axe findings fail. Known findings require an
+  exact route, rule, target and a link to a tracking issue in
+  `axe-allowlist.json`; do not add broad rule exclusions. The baseline is
+  currently empty after fixing all findings detected at rollout.
+- `visual.spec.ts` compares desktop and mobile screenshots. Animations and
+  carets are disabled, the light theme is fixed, and fonts are ready before
+  capture.
 
-CI checks out `docforum-core` at the SHA in
-`.github/workflows/ci.yml` (`E2E_CORE_REF`). To bump it, change that value
-and this line in the same PR. The pin exists so a backend change can't break
-this repo's CI without a deliberate update.
+To review a legitimate visual change, run the update command **inside the
+same pinned container** from the repository root:
 
-## Run locally
-
-```bash
-# 1. Throwaway Postgres on the default port.
-docker run --rm -d --name docforum-e2e-pg \
-  -e POSTGRES_USER=docforum -e POSTGRES_PASSWORD=docforum \
-  -e POSTGRES_DB=docforum_e2e -p 5432:5432 postgres:16
-
-# 2. Sibling checkout of docforum-core (any ref; CI pins its own).
-git clone https://github.com/DocForum/docforum-core.git
-
-# 3. Install + migrate core's backend.
-(cd docforum-core/backend && npm ci && npm run prisma:generate)
-(cd docforum-core/backend && DATABASE_URL=postgresql://docforum:docforum@localhost:5432/docforum_e2e \
-  npx prisma migrate deploy)
-
-# 4. Run the smoke test. It starts the backend (port 4000) and Vite (5173).
-npm run test:e2e
+```sh
+docker run --rm --ipc=host -v "$PWD:/work" -w /work \
+  mcr.microsoft.com/playwright:v1.64.1-noble \
+  sh -lc 'npm ci && npm run test:e2e:update'
+git diff -- e2e/__screenshots__
 ```
 
-If your core checkout is not at `./docforum-core`, set
-`DOCFORUM_CORE_DIR=/path/to/docforum-core`. `DATABASE_URL` overrides the
-default `postgresql://docforum:docforum@localhost:5432/docforum_e2e`.
-
-Playwright itself needs browsers once: `npx playwright install chromium`.
+Inspect each changed PNG and commit it with the UI change. CI uploads the
+HTML report and failed actual/diff images from `test-results/` even when the
+suite fails. Run `npm run test:e2e` again before opening a PR.

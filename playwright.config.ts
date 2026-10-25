@@ -1,51 +1,38 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
-// Real backend, real database, no network mocks (issue #12). The backend is
-// pinned by the CI checkout step (`.github/workflows/ci.yml`) — bump the ref
-// there and update e2e/README.md's "Pinned core ref" line in the same PR.
-const coreDir = process.env.DOCFORUM_CORE_DIR ?? 'docforum-core';
-const databaseUrl =
-  process.env.DATABASE_URL ?? 'postgresql://docforum:docforum@localhost:5432/docforum_e2e';
+const baseURL = 'http://127.0.0.1:4173';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false,
-  workers: 1,
-  timeout: 90_000,
-  expect: { timeout: 15_000 },
-  reporter: process.env.CI ? 'github' : 'list',
+  timeout: 60_000,
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 2 : undefined,
+  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL,
     trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    locale: 'en-US',
+    timezoneId: 'Africa/Lagos',
+    serviceWorkers: 'allow',
   },
-  webServer: [
-    {
-      // Core's own tsx, so its TypeScript sources and node_modules resolve
-      // correctly while the process runs from this repo.
-      command: `${coreDir}/backend/node_modules/.bin/tsx e2e/core-server.mts`,
-      url: 'http://localhost:4000/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-      env: {
-        ...process.env,
-        NODE_ENV: 'test',
-        PORT: '4000',
-        DATABASE_URL: databaseUrl,
-        JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET ?? 'e2e-access-secret',
-        JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET ?? 'e2e-refresh-secret',
-        CORS_ORIGINS: 'http://localhost:5173,http://127.0.0.1:5173',
-        DOCFORUM_CORE_DIR: coreDir,
-      },
-    },
-    {
-      command: 'npm run dev -- --port 5173 --strictPort',
-      url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-      env: {
-        ...process.env,
-        VITE_API_BASE_URL: 'http://localhost:4000',
-      },
-    },
+  expect: {
+    toHaveScreenshot: { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.005 },
+  },
+  snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}',
+  projects: [
+    { name: 'journeys', testMatch: /journeys\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'a11y-light', testMatch: /accessibility\.spec\.ts/, use: { ...devices['Desktop Chrome'], colorScheme: 'light', reducedMotion: 'no-preference' } },
+    { name: 'a11y-reduced', testMatch: /accessibility\.spec\.ts/, use: { ...devices['Desktop Chrome'], colorScheme: 'light', reducedMotion: 'reduce' } },
+    { name: 'visual-desktop', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' } },
+    { name: 'visual-mobile', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 1, reducedMotion: 'reduce' } },
   ],
+  webServer: {
+    command: 'VITE_USE_HASH_ROUTER=true npm run dev:mock -- --host 127.0.0.1 --port 4173 --strictPort',
+    url: baseURL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+  },
 });
