@@ -6,7 +6,7 @@ import { AffectedAppointments } from '../features/admin-closures/components/Affe
 import { ClosureList } from '../features/admin-closures/components/ClosureList';
 
 function AffectedAppointmentsReport({ closureId }: { closureId: string }) {
-  const { data, isLoading } = useAffectedAppointments(closureId);
+  const { data, isLoading, error, refetch } = useAffectedAppointments(closureId);
 
   return (
     <div className="admin-closures-page">
@@ -16,38 +16,18 @@ function AffectedAppointmentsReport({ closureId }: { closureId: string }) {
         <a href="/admin/closures" style={{ color: 'var(--color-accent)' }}>← Back to closures</a>
       </p>
 
-      {isLoading ? (
-        <Spinner />
-      ) : (
+      <QueryState
+        result={{ isPending: isLoading, isError: Boolean(error), error, data, refetch }}
+        loading={<Skeleton lines={4} height="2rem" label="Loading affected appointments" />}
+        errorTitle="Affected appointments couldn't be loaded"
+      >
         <AffectedAppointments closureId={closureId} data={data} />
-      )}
+      </QueryState>
     </div>
   );
 }
 
-  // If a closureId is in the URL, show the affected appointments report
-  if (closureId) {
-    const { data, isLoading, error, refetch } = useAffectedAppointments(closureId);
-    return (
-      <div className="admin-closures-page">
-        <h1>Affected Appointments Report</h1>
-        <p>
-          Closure ID: {closureId}{' '}
-          <a href="/admin/closures" style={{ color: 'var(--color-accent)' }}>← Back to closures</a>
-        </p>
-
-        <QueryState
-          result={{ isPending: isLoading, isError: Boolean(error), error, data, refetch }}
-          loading={<Skeleton lines={4} height="2rem" label="Loading affected appointments" />}
-          errorTitle="Affected appointments couldn't be loaded"
-        >
-          <AffectedAppointments closureId={closureId} data={data} />
-        </QueryState>
-      </div>
-    );
-  }
-
-  // Otherwise, show the closures list
+function ClosuresList() {
   const { data: closures, isLoading, error, refetch } = useClosures();
   const safeClosures = closures ?? [];
 

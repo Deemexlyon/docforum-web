@@ -36,7 +36,7 @@ export function FormField<
   name,
   label,
   error: errorOverride,
-  hint: _hint,
+  hint,
   ...rest
 }: FormFieldProps<TFieldValues, TFieldName>) {
   const { control } = useFormContext<TFieldValues>();

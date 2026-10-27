@@ -10,6 +10,9 @@
 // cross-site `SameSite=None; Secure` cookie (GitHub Pages and Render are
 // different domains), which `fetch` only sends/stores with this flag.
 import { createApiClient, type ApiTransport, type TransportOptions } from '@docforum/api-client';
+import { useAuthStore } from '../store/auth-store';
+import { readCsrfToken } from './csrf-storage';
+import type { AuthSession } from './auth-service';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
@@ -317,6 +320,7 @@ function buildHeaders(options: RequestOptions, parse: ParseMode, hasForm = false
   // sets Content-Type here.
   if (!hasForm && options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (options.accessToken) headers.Authorization = `Bearer ${options.accessToken}`;
+  if (options.csrfToken) headers['X-CSRF-Token'] = options.csrfToken;
   if (options.idempotencyKey) headers[IDEMPOTENCY_HEADER] = options.idempotencyKey;
   return headers;
 }

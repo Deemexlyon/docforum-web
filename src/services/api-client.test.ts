@@ -13,6 +13,7 @@ import {
   createIdempotencyKey,
   isAbortError,
   isRetryableError,
+  refreshSession,
 } from './api-client';
 import { bootstrapSession } from './session';
 import { useAuthStore } from '../store/auth-store';

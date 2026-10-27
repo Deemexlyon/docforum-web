@@ -14,6 +14,7 @@ export default tseslint.config(
       'node_modules/',
       'coverage/',
       'docforum-core/',
+      'packages/api-client/src/generated/',
       'playwright-report/',
       'test-results/',
       '*.tsbuildinfo',
@@ -55,6 +56,9 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2022,
       globals: { ...globals.node },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'warn',
     },
   },
   {

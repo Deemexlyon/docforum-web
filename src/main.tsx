@@ -80,6 +80,13 @@ async function boot(): Promise<void> {
     });
   }
 
+  // Silent re-auth on reload (issue #9). Deliberately NOT awaited before
+  // render: a cold-started Render instance can take ~40s, and RequireAuth
+  // shows a "Restoring your session…" state while this is in flight. If a
+  // session already exists (mock mode / ?previewRole=), this resolves
+  // immediately without a network call.
+  void bootstrapSession();
+
   const rootElement = document.getElementById('root');
   if (!rootElement) throw new Error('#root element not found');
 
