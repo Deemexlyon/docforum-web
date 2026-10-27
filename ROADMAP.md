@@ -41,7 +41,7 @@ API" for the one documented local-dev cookie caveat.
 - [ ] Restore session on reload via `POST /auth/refresh` (single-flight refresh, one retry on `401`, `RequireAuth` waits for boot refresh). Tracked as [issue #9](https://github.com/DocForum/docforum-web/issues/9) (Medium, 150 pts).
 - [ ] Not done: any integration test against a real `docforum-core`
   instance. Tracked as [issue #12](https://github.com/DocForum/docforum-web/issues/12) (High, 200 pts) — an end-to-end smoke test against a throwaway `docforum-core` backend.
-- [ ] ESLint + lint step in CI. Tracked as [issue #11](https://github.com/DocForum/docforum-web/issues/11) (Trivial, 100 pts).
+- [x] ESLint + lint step in CI. Tracked as [issue #11](https://github.com/DocForum/docforum-web/issues/11) (Trivial, 100 pts).
 - [x] Deployed as a UI preview to GitHub Pages on every push to `main`
   (`.github/workflows/deploy-pages.yml`) — see `ARCHITECTURE_ESSENTIALS.md`
   "Deployment". Not a production deploy decision for the org; scoped to
