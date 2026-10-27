@@ -12,12 +12,12 @@ const screens: ReadonlyArray<{ name: string; path: string; role: Role; ready: st
 ];
 
 // Mock fixtures carry absolute dates, so a screenshot taken "now" drifts as
-// the calendar moves: Tyke's handover invite expires on 2026-10-25T09:00Z, and
-// the day that passed the patient hub grew an "Invite expired" card and
-// changed this suite's baseline. Freezing the browser clock at a fixed instant
-// inside the fixtures' own "present" keeps every screenshot deterministic.
-// (Timers keep running — only `Date` is fixed.)
-const FIXED_NOW = new Date('2026-10-20T12:00:00.000Z');
+// the calendar moves: Tyke's handover invite expired on 2026-10-25T09:00Z, and
+// main's baseline screenshots (PR #198) were captured after that point with the
+// "Invite expired" card visible. Freezing the browser clock at that baseline
+// instant keeps every screenshot deterministic. (Timers keep running — only
+// `Date` is fixed.)
+const FIXED_NOW = new Date('2026-10-27T12:00:00.000Z');
 
 for (const screen of screens) {
   test(`${screen.name} screenshot`, async ({ page, visit }) => {
